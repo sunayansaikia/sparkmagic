@@ -282,6 +282,7 @@ class KernelMagics(SparkMagicBase):
 
     @magic_arguments()
     @cell_magic
+    @needs_local_scope
     @argument(
         "-f",
         "--force",
@@ -296,7 +297,10 @@ class KernelMagics(SparkMagicBase):
     @_event
     def configure(self, line, cell="", local_ns=None):
         try:
-            dictionary = json.loads(cell)
+            # Evaluate Python expressions in the input string
+            # Evaluate the cell content as Python code
+            dictionary = eval(cell, local_ns)
+            #dictionary = json.loads(cell)
         except ValueError:
             self.ipython_display.send_error(
                 "Could not parse JSON object from input '{}'".format(cell)
