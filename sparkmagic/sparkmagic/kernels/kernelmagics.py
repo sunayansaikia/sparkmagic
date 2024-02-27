@@ -244,11 +244,20 @@ class KernelMagics(SparkMagicBase):
 
     @magic_arguments()
     @cell_magic
+    @argument(
+        "-q",
+        "--quiet",
+        type=bool,
+        default=False,
+        nargs="?",
+        const=True,
+        help="Optionally disables configuration params display.",
+    )
     @wrap_unexpected_exceptions
     @handle_expected_exceptions
     @_event
     def info(self, line, cell="", local_ns=None):
-        parse_argstring_or_throw(self.info, line)
+        args = parse_argstring_or_throw(self.info, line)
         self._assure_cell_body_is_empty(KernelMagics.info.__name__, cell)
         if self.session_started:
             current_session_id = self.spark_controller.get_session_id_for_client(
@@ -256,13 +265,12 @@ class KernelMagics(SparkMagicBase):
             )
         else:
             current_session_id = None
-
-        self.ipython_display.html(
-            "Current session configs: <tt>{}</tt><br>".format(
-                conf.get_session_properties(self.language)
+        if not args.quiet:
+            self.ipython_display.html(
+                "Current session configs: <tt>{}</tt><br>".format(
+                    conf.get_session_properties(self.language)
+                )
             )
-        )
-
         info_sessions = self.spark_controller.get_all_sessions_endpoint(self.endpoint)
         self._print_endpoint_info(info_sessions, current_session_id)
 
@@ -292,6 +300,15 @@ class KernelMagics(SparkMagicBase):
         const=True,
         help="If present, user understands.",
     )
+    @argument(
+        "-q",
+        "--quiet",
+        type=bool,
+        default=False,
+        nargs="?",
+        const=True,
+        help="Optionally disables configuration params display.",
+    )
     @wrap_unexpected_exceptions
     @handle_expected_exceptions
     @_event
@@ -320,7 +337,10 @@ class KernelMagics(SparkMagicBase):
                 self._do_not_call_start_session("")
         else:
             self._override_session_settings(dictionary)
-        self.info("")
+        if args.quiet:
+            self.info("-q")
+        else:
+            self.info("")
 
     @magic_arguments()
     @cell_magic
